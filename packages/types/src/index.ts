@@ -106,6 +106,10 @@ export interface PlayerSubmitAnswerPayload {
   symbol: AnswerSymbol; // no client timestamp — server records arrival time for scoring
 }
 
+export interface HostJoinPayload {
+  lobbyId: string;
+}
+
 // Server → Client
 export interface LobbyPlayerJoinedPayload {
   player: Player;
@@ -135,6 +139,7 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
+  "host:join": (payload: HostJoinPayload) => void;
   "player:join": (payload: PlayerJoinPayload) => void;
   "host:player_ready": (payload: HostPlayerReadyPayload) => void;
   "host:start_game": (payload: HostStartGamePayload) => void;
@@ -160,4 +165,8 @@ export const HostStartGameSchema = z.object({
 
 export const PlayerSubmitAnswerSchema = z.object({
   symbol: z.enum(ANSWER_SYMBOLS),
+});
+
+export const HostJoinSchema = z.object({
+  lobbyId: z.string(),
 });
