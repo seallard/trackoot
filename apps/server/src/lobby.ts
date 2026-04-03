@@ -30,3 +30,19 @@ export async function getLobbyIdByPin(pin: string): Promise<string | null> {
 export async function addPlayerToLobby(lobbyId: string, player: Player): Promise<void> {
   await redis.hset(`lobby:${lobbyId}:players`, player.playerId, JSON.stringify(player));
 }
+
+export async function getPlayers(lobbyId: string): Promise<Player[]> {
+  const data = await redis.hgetall(`lobby:${lobbyId}:players`);
+  if (!data) return [];
+  return Object.values(data).map((json) => JSON.parse(json) as Player);
+}
+
+export async function recordScore(
+  lobbyId: string,
+  playerId: string,
+  score: number,
+): Promise<number> {
+  await redis.zincrby(`lobby:${lobbyId}:scores`, score, playerId);
+  const total = await redis.zscore(`lobby:${lobbyId}:scores`, playerId);
+  return Number(total ?? 0);
+}

@@ -2,9 +2,20 @@ import { createServer } from "node:http";
 import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
-import { HostJoinSchema, PlayerJoinSchema } from "@trackoot/types";
+import {
+  HostJoinSchema,
+  HostStartGameSchema,
+  PlayerJoinSchema,
+  PlayerSubmitAnswerSchema,
+} from "@trackoot/types";
 import type { ClientToServerEvents, ServerToClientEvents } from "@trackoot/types";
-import { addPlayerToLobby, createLobby, getLobby, getLobbyIdByPin } from "./lobby";
+import { recordAnswer, startRound } from "./game";
+import { addPlayerToLobby, createLobby, getLobby, getLobbyIdByPin, getPlayers } from "./lobby";
+
+interface SocketData {
+  playerId?: string;
+  lobbyId?: string;
+}
 
 const app = express();
 const origin = process.env.WEB_URL ?? "http://localhost:3000";
@@ -38,14 +49,16 @@ app.get("/lobbies/:lobbyId", async (req, res) => {
 
 const httpServer = createServer(app);
 
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-  cors: { origin },
-});
+const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(
+  httpServer,
+  { cors: { origin } },
+);
 
 io.on("connection", (socket) => {
   socket.on("host:join", (payload) => {
     const result = HostJoinSchema.safeParse(payload);
     if (!result.success) return;
+    socket.data.lobbyId = result.data.lobbyId;
     socket.join(`lobby:${result.data.lobbyId}`);
   });
 
@@ -53,10 +66,29 @@ io.on("connection", (socket) => {
     const result = PlayerJoinSchema.safeParse(payload);
     if (!result.success) return;
     const { lobbyId, playerId, displayName } = result.data;
+    socket.data.playerId = playerId;
+    socket.data.lobbyId = lobbyId;
     const player = { playerId, displayName };
     await addPlayerToLobby(lobbyId, player);
     socket.join(`lobby:${lobbyId}`);
     io.to(`lobby:${lobbyId}`).emit("lobby:player_joined", { player });
+  });
+
+  socket.on("host:start_game", async (payload) => {
+    const result = HostStartGameSchema.safeParse(payload);
+    if (!result.success) return;
+    const { lobbyId } = result.data;
+    const players = await getPlayers(lobbyId);
+    if (players.length < 2) return;
+    await startRound(io, lobbyId, players);
+  });
+
+  socket.on("player:submit_answer", async (payload) => {
+    const result = PlayerSubmitAnswerSchema.safeParse(payload);
+    if (!result.success) return;
+    const { playerId, lobbyId } = socket.data;
+    if (!playerId || !lobbyId) return;
+    await recordAnswer(io, lobbyId, playerId, result.data.symbol);
   });
 });
 
