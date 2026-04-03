@@ -53,10 +53,15 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
     })),
   setPlayerIdentity: (playerId, displayName) => set({ playerId, displayName }),
   startRound: (round, endsAt) =>
-    set({ gamePhase: "round_active", round, endsAt, correctSymbol: null, submittedSymbol: null, scores: null }),
-  endRound: (correctSymbol, scores) =>
-    set({ gamePhase: "round_results", correctSymbol, scores }),
-  endGame: (finalStandings) =>
-    set({ gamePhase: "game_over", finalStandings }),
+    set({
+      gamePhase: "round_active",
+      round,
+      endsAt,
+      correctSymbol: null,
+      submittedSymbol: null,
+      scores: null,
+    }),
+  endRound: (correctSymbol, scores) => set({ gamePhase: "round_results", correctSymbol, scores }),
+  endGame: (finalStandings) => set({ gamePhase: "game_over", finalStandings }),
   setSubmittedSymbol: (symbol) => set({ submittedSymbol: symbol }),
 }));

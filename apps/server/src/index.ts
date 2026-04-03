@@ -49,10 +49,12 @@ app.get("/lobbies/:lobbyId", async (req, res) => {
 
 const httpServer = createServer(app);
 
-const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(
-  httpServer,
-  { cors: { origin } },
-);
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  Record<string, never>,
+  SocketData
+>(httpServer, { cors: { origin } });
 
 io.on("connection", (socket) => {
   socket.on("host:join", (payload) => {

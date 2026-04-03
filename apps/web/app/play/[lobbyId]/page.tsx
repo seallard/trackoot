@@ -91,11 +91,7 @@ export default function PlayPage() {
         <p>{submittedSymbol ? "Answer submitted — waiting for others…" : "Choose your answer:"}</p>
         <div>
           {ANSWER_SYMBOLS.filter((s) => round.options.some((o) => o.symbol === s)).map((symbol) => (
-            <button
-              key={symbol}
-              onClick={() => handleAnswer(symbol)}
-              disabled={!!submittedSymbol}
-            >
+            <button key={symbol} onClick={() => handleAnswer(symbol)} disabled={!!submittedSymbol}>
               {SYMBOL_LABELS[symbol]}
             </button>
           ))}

@@ -108,10 +108,7 @@ async function endRound(io: IoServer, lobbyId: string): Promise<void> {
   const roundScores = new Map<string, number>();
   for (const [playerId, answer] of active.answers) {
     const isCorrect = answer.symbol === active.correctSymbol;
-    roundScores.set(
-      playerId,
-      isCorrect ? computeScore(answer.receivedAt, roundStartAt) : 0,
-    );
+    roundScores.set(playerId, isCorrect ? computeScore(answer.receivedAt, roundStartAt) : 0);
   }
 
   const scores: PlayerScore[] = await Promise.all(
