@@ -13,6 +13,7 @@ import type { ClientToServerEvents, ServerToClientEvents } from "@trackoot/types
 import authRouter from "./auth";
 import { recordAnswer, startRound } from "./game";
 import { addPlayerToLobby, createLobby, getLobby, getLobbyIdByPin, getPlayers } from "./lobby";
+import { cachePlayerSpotifyData } from "./spotify-data";
 
 interface SocketData {
   playerId?: string;
@@ -76,6 +77,9 @@ io.on("connection", (socket) => {
     socket.data.lobbyId = lobbyId;
     const player = { playerId, displayName };
     await addPlayerToLobby(lobbyId, player);
+    cachePlayerSpotifyData(playerId).catch((err) =>
+      console.error(`Failed to cache Spotify data for ${playerId}:`, err),
+    );
     socket.join(`lobby:${lobbyId}`);
     io.to(`lobby:${lobbyId}`).emit("lobby:player_joined", { player });
   });

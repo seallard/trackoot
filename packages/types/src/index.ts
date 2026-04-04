@@ -18,6 +18,28 @@ export interface Player {
   displayName: string;
 }
 
+// ---- Spotify Data (cached per player) ----
+
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  albumArtUrl?: string;
+  artistId: string;
+  artistName: string;
+}
+
+export interface SpotifyArtist {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  genres: string[];
+}
+
+export interface SpotifyPlayerData {
+  topTracks: SpotifyTrack[]; // up to 50, medium_term
+  topArtists: SpotifyArtist[]; // up to 50, medium_term
+}
+
 export interface PlayerScore {
   playerId: string;
   displayName: string;
