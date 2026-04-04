@@ -89,7 +89,7 @@ io.on("connection", (socket) => {
     if (!result.success) return;
     const { lobbyId } = result.data;
     const players = await getPlayers(lobbyId);
-    if (players.length < 2) return;
+    if (players.length < 1) return;
     await startRound(io, lobbyId, players);
   });
 

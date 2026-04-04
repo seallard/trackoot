@@ -137,7 +137,7 @@ export default function HostLobbyPage() {
           <li key={p.playerId}>{p.displayName}</li>
         ))}
       </ul>
-      <button onClick={handleStartGame} disabled={players.length < 2}>
+      <button onClick={handleStartGame} disabled={players.length < 1}>
         Start Game
       </button>
     </main>

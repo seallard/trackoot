@@ -66,3 +66,20 @@ export async function getTopArtists(accessToken: string): Promise<SpotifyArtist[
     genres: item.genres,
   }));
 }
+
+const ArtistTopTracksSchema = z.object({
+  tracks: z.array(z.object({ id: z.string() })),
+});
+
+export async function getArtistTopTrack(
+  artistId: string,
+  accessToken: string,
+): Promise<string | null> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=from_token`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) return null;
+  const { tracks } = ArtistTopTracksSchema.parse(await res.json());
+  return tracks[0]?.id ?? null;
+}
