@@ -4,11 +4,15 @@ import type { AnswerSymbol, Player, PlayerScore, Round } from "@trackoot/types";
 type GamePhase = "waiting" | "round_active" | "round_results" | "game_over";
 
 interface LobbyStore {
+  // Auth
+  userId: string | null;
+  role: "host" | "player" | null;
+
   // Lobby
   pin: string | null;
   players: Player[];
 
-  // Player identity
+  // Player identity (userId once authenticated, random UUID before)
   playerId: string | null;
   displayName: string | null;
 
@@ -22,6 +26,7 @@ interface LobbyStore {
   submittedSymbol: AnswerSymbol | null;
 
   // Actions
+  setAuth: (userId: string, displayName: string, role: "host" | "player") => void;
   setPin: (pin: string) => void;
   addPlayer: (player: Player) => void;
   setPlayerIdentity: (playerId: string, displayName: string) => void;
@@ -32,6 +37,8 @@ interface LobbyStore {
 }
 
 export const useLobbyStore = create<LobbyStore>((set) => ({
+  userId: null,
+  role: null,
   pin: null,
   players: [],
   playerId: null,
@@ -44,6 +51,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   finalStandings: null,
   submittedSymbol: null,
 
+  setAuth: (userId, displayName, role) => set({ userId, displayName, playerId: userId, role }),
   setPin: (pin) => set({ pin }),
   addPlayer: (player) =>
     set((state) => ({

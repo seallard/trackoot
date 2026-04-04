@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createServer } from "node:http";
 import cors from "cors";
 import express from "express";
@@ -9,6 +10,7 @@ import {
   PlayerSubmitAnswerSchema,
 } from "@trackoot/types";
 import type { ClientToServerEvents, ServerToClientEvents } from "@trackoot/types";
+import authRouter from "./auth";
 import { recordAnswer, startRound } from "./game";
 import { addPlayerToLobby, createLobby, getLobby, getLobbyIdByPin, getPlayers } from "./lobby";
 
@@ -22,6 +24,8 @@ const origin = process.env.WEB_URL ?? "http://localhost:3000";
 
 app.use(cors({ origin }));
 app.use(express.json());
+
+app.use("/auth", authRouter);
 
 app.post("/lobbies", async (_req, res) => {
   const result = await createLobby();
@@ -54,7 +58,7 @@ const io = new Server<
   ServerToClientEvents,
   Record<string, never>,
   SocketData
->(httpServer, { cors: { origin } });
+>(httpServer, { cors: { origin, credentials: true } });
 
 io.on("connection", (socket) => {
   socket.on("host:join", (payload) => {

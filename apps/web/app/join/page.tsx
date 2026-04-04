@@ -2,24 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
 import { useLobbyStore } from "@/lib/store";
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
 
-const ADJECTIVES = ["Quick", "Lazy", "Happy", "Wild", "Brave", "Calm", "Dizzy", "Funky"];
-const NOUNS = ["Fox", "Bear", "Tiger", "Eagle", "Wolf", "Shark", "Panda", "Sloth"];
-
-function randomDisplayName() {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  return `${adj}${noun}`;
-}
-
 export default function JoinPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { loading } = useAuth("player");
   const router = useRouter();
   const setPlayerIdentity = useLobbyStore((s) => s.setPlayerIdentity);
+  const userId = useLobbyStore((s) => s.userId);
+  const displayName = useLobbyStore((s) => s.displayName);
 
   async function handleJoin() {
     setError(null);
@@ -29,15 +24,25 @@ export default function JoinPage() {
       return;
     }
     const { lobbyId } = await res.json();
-    const playerId = crypto.randomUUID();
-    const displayName = randomDisplayName();
-    setPlayerIdentity(playerId, displayName);
+    setPlayerIdentity(userId!, displayName!);
     router.push(`/play/${lobbyId}`);
   }
+
+  if (loading)
+    return (
+      <main>
+        <p>Loading…</p>
+      </main>
+    );
 
   return (
     <main>
       <h1>Join Game</h1>
+      {displayName && (
+        <p>
+          Signed in as <strong>{displayName}</strong>
+        </p>
+      )}
       <input
         type="text"
         inputMode="numeric"

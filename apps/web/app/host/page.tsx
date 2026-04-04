@@ -1,13 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
 import { useLobbyStore } from "@/lib/store";
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
 
 export default function HostPage() {
   const router = useRouter();
+  const { loading } = useAuth("host");
   const setPin = useLobbyStore((s) => s.setPin);
+  const userId = useLobbyStore((s) => s.userId);
 
   async function handleCreateLobby() {
     const res = await fetch(`${SERVER_URL}/lobbies`, { method: "POST" });
@@ -16,10 +19,17 @@ export default function HostPage() {
     router.push(`/host/${lobbyId}`);
   }
 
+  if (loading)
+    return (
+      <main>
+        <p>Loading…</p>
+      </main>
+    );
+
   return (
     <main>
       <h1>Trackoot</h1>
-      <button onClick={handleCreateLobby}>Create Lobby</button>
+      {userId && <button onClick={handleCreateLobby}>Create Lobby</button>}
     </main>
   );
 }
