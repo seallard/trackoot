@@ -48,6 +48,11 @@ export async function getPlayers(lobbyId: string): Promise<Player[]> {
   return Object.values(data).map((json) => JSON.parse(json) as Player);
 }
 
+export async function resetLobby(lobbyId: string): Promise<void> {
+  await redis.del(`lobby:${lobbyId}:scores`);
+  await redis.hset(`lobby:${lobbyId}`, { state: "LOBBY_WAITING" });
+}
+
 export async function recordScore(
   lobbyId: string,
   playerId: string,

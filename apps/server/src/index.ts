@@ -6,6 +6,7 @@ import { Server } from "socket.io";
 import {
   HostJoinSchema,
   HostPlayerReadySchema,
+  HostResetGameSchema,
   HostStartGameSchema,
   PlayerJoinSchema,
   PlayerSubmitAnswerSchema,
@@ -19,6 +20,7 @@ import {
   getLobby,
   getLobbyIdByPin,
   getPlayers,
+  resetLobby,
   setDeviceId,
 } from "./lobby";
 import { cachePlayerSpotifyData } from "./spotify-data";
@@ -120,6 +122,14 @@ io.on("connection", (socket) => {
     const players = await getPlayers(lobbyId);
     if (players.length < 1) return;
     await startRound(io, lobbyId, players);
+  });
+
+  socket.on("host:reset_game", async (payload) => {
+    const result = HostResetGameSchema.safeParse(payload);
+    if (!result.success) return;
+    const { lobbyId } = result.data;
+    await resetLobby(lobbyId);
+    io.to(`lobby:${lobbyId}`).emit("lobby:reset");
   });
 
   socket.on("player:submit_answer", async (payload) => {

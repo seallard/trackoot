@@ -52,8 +52,8 @@ export async function generateQuestions(
     }
   }
 
-  // Sort: shared artists (more players) first, then by total player count
-  const candidates = [...artistMap.values()].sort(
+  // Shuffle first so within each tier the order is random, then sort by player count
+  const candidates = shuffle([...artistMap.values()]).sort(
     (a, b) => b.playerRanks.length - a.playerRanks.length,
   );
 

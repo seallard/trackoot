@@ -29,6 +29,7 @@ export default function PlayPage() {
   const startRound = useLobbyStore((s) => s.startRound);
   const endRound = useLobbyStore((s) => s.endRound);
   const endGame = useLobbyStore((s) => s.endGame);
+  const resetGame = useLobbyStore((s) => s.resetGame);
   const setSubmittedSymbol = useLobbyStore((s) => s.setSubmittedSymbol);
 
   useEffect(() => {
@@ -36,16 +37,18 @@ export default function PlayPage() {
     const socket = getSocket();
     socket.emit("player:join", { lobbyId, playerId, displayName });
 
+    socket.on("lobby:reset", () => resetGame());
     socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
 
     return () => {
+      socket.off("lobby:reset");
       socket.off("game:round_start");
       socket.off("game:round_end");
       socket.off("game:over");
     };
-  }, [lobbyId, playerId, displayName, startRound, endRound, endGame]);
+  }, [lobbyId, playerId, displayName, startRound, endRound, endGame, resetGame]);
 
   function handleAnswer(symbol: AnswerSymbol) {
     if (submittedSymbol) return;

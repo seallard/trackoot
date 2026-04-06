@@ -34,6 +34,7 @@ interface LobbyStore {
   endRound: (correctSymbol: AnswerSymbol, scores: PlayerScore[]) => void;
   endGame: (finalStandings: PlayerScore[]) => void;
   setSubmittedSymbol: (symbol: AnswerSymbol) => void;
+  resetGame: () => void;
 }
 
 export const useLobbyStore = create<LobbyStore>((set) => ({
@@ -72,4 +73,14 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   endRound: (correctSymbol, scores) => set({ gamePhase: "round_results", correctSymbol, scores }),
   endGame: (finalStandings) => set({ gamePhase: "game_over", finalStandings }),
   setSubmittedSymbol: (symbol) => set({ submittedSymbol: symbol }),
+  resetGame: () =>
+    set({
+      gamePhase: "waiting",
+      round: null,
+      endsAt: null,
+      correctSymbol: null,
+      scores: null,
+      finalStandings: null,
+      submittedSymbol: null,
+    }),
 }));

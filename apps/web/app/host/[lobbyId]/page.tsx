@@ -33,6 +33,7 @@ export default function HostLobbyPage() {
   const startRound = useLobbyStore((s) => s.startRound);
   const endRound = useLobbyStore((s) => s.endRound);
   const endGame = useLobbyStore((s) => s.endGame);
+  const resetGame = useLobbyStore((s) => s.resetGame);
 
   // Load Spotify Web Playback SDK and initialize player
   useEffect(() => {
@@ -73,17 +74,19 @@ export default function HostLobbyPage() {
     socket.emit("host:join", { lobbyId });
 
     socket.on("lobby:player_joined", ({ player }) => addPlayer(player));
+    socket.on("lobby:reset", () => resetGame());
     socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
 
     return () => {
       socket.off("lobby:player_joined");
+      socket.off("lobby:reset");
       socket.off("game:round_start");
       socket.off("game:round_end");
       socket.off("game:over");
     };
-  }, [lobbyId, addPlayer, startRound, endRound, endGame]);
+  }, [lobbyId, addPlayer, startRound, endRound, endGame, resetGame]);
 
   // Countdown timer
   useEffect(() => {
@@ -102,8 +105,11 @@ export default function HostLobbyPage() {
   }, [gamePhase, endsAt]);
 
   function handleStartGame() {
-    const socket = getSocket();
-    socket.emit("host:start_game", { lobbyId });
+    getSocket().emit("host:start_game", { lobbyId });
+  }
+
+  function handlePlayAgain() {
+    getSocket().emit("host:reset_game", { lobbyId });
   }
 
   if (gamePhase === "game_over" && finalStandings) {
@@ -117,6 +123,7 @@ export default function HostLobbyPage() {
             </li>
           ))}
         </ol>
+        <button onClick={handlePlayAgain}>Play Again</button>
       </main>
     );
   }

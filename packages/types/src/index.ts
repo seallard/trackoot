@@ -108,6 +108,10 @@ export interface Lobby {
 
 // ---- Socket.io Event Payloads ----
 
+export interface HostResetGamePayload {
+  lobbyId: string;
+}
+
 // Client → Server
 export interface PlayerJoinPayload {
   lobbyId: string;
@@ -155,6 +159,7 @@ export interface GameOverPayload {
 
 export interface ServerToClientEvents {
   "lobby:player_joined": (payload: LobbyPlayerJoinedPayload) => void;
+  "lobby:reset": () => void;
   "game:round_start": (payload: GameRoundStartPayload) => void;
   "game:round_end": (payload: GameRoundEndPayload) => void;
   "game:over": (payload: GameOverPayload) => void;
@@ -165,6 +170,7 @@ export interface ClientToServerEvents {
   "player:join": (payload: PlayerJoinPayload) => void;
   "host:player_ready": (payload: HostPlayerReadyPayload) => void;
   "host:start_game": (payload: HostStartGamePayload) => void;
+  "host:reset_game": (payload: HostResetGamePayload) => void;
   "player:submit_answer": (payload: PlayerSubmitAnswerPayload) => void;
 }
 
@@ -190,5 +196,9 @@ export const PlayerSubmitAnswerSchema = z.object({
 });
 
 export const HostJoinSchema = z.object({
+  lobbyId: z.string(),
+});
+
+export const HostResetGameSchema = z.object({
   lobbyId: z.string(),
 });
