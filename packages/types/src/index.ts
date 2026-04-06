@@ -14,8 +14,9 @@ export interface AnswerOption {
 // ---- Players ----
 
 export interface Player {
-  playerId: string; // Spotify user ID
+  playerId: string; // Spotify user ID, or guest_{random} for guests
   displayName: string;
+  isGuest: boolean; // true if joined without any streaming service auth
 }
 
 // ---- Spotify Data (cached per player) ----

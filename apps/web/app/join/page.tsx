@@ -2,24 +2,52 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/useAuth";
+import { loadSession, saveSession } from "@/lib/session";
 import { useLobbyStore } from "@/lib/store";
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
 
+function generateGuestId() {
+  return `guest_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function JoinPage() {
   const [pin, setPin] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { loading } = useAuth("player");
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const router = useRouter();
   const setPlayerIdentity = useLobbyStore((s) => s.setPlayerIdentity);
-  const userId = useLobbyStore((s) => s.userId);
-  const displayName = useLobbyStore((s) => s.displayName);
-  const [name, setName] = useState("");
+  const setAuth = useLobbyStore((s) => s.setAuth);
 
   useEffect(() => {
-    if (displayName && !name) setName(displayName);
-  }, [displayName]);
+    // Check for Spotify OAuth redirect params
+    const params = new URLSearchParams(window.location.search);
+    const urlUserId = params.get("userId");
+    const urlDisplayName = params.get("displayName");
+    const urlRole = params.get("role");
+
+    if (urlUserId && urlDisplayName && urlRole === "player") {
+      saveSession({ userId: urlUserId, displayName: urlDisplayName, role: "player" });
+      setAuth(urlUserId, urlDisplayName, "player");
+      setResolvedUserId(urlUserId);
+      setName(urlDisplayName);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    // Check for existing session
+    const stored = loadSession();
+    if (stored?.role === "player") {
+      setAuth(stored.userId, stored.displayName, "player");
+      setResolvedUserId(stored.userId);
+      setName(stored.displayName);
+      return;
+    }
+
+    // No session — guest mode
+    setResolvedUserId(generateGuestId());
+  }, [setAuth]);
 
   async function handleJoin() {
     setError(null);
@@ -34,16 +62,15 @@ export default function JoinPage() {
       return;
     }
     const { lobbyId } = await res.json();
-    setPlayerIdentity(userId!, trimmedName);
+    setPlayerIdentity(resolvedUserId!, trimmedName);
     router.push(`/play/${lobbyId}`);
   }
 
-  if (loading)
-    return (
-      <main className="flex h-full items-center justify-center">
-        <p className="animate-pulse text-xl text-white/70">Loading…</p>
-      </main>
-    );
+  function handleSpotifyLogin() {
+    window.location.href = `${SERVER_URL}/auth/spotify?role=player`;
+  }
+
+  const isGuest = resolvedUserId?.startsWith("guest_");
 
   return (
     <main className="flex h-full flex-col items-center justify-center gap-6 px-6">
@@ -72,11 +99,31 @@ export default function JoinPage() {
 
         <button
           onClick={handleJoin}
-          disabled={pin.length !== 6 || !name.trim()}
+          disabled={pin.length !== 6 || !name.trim() || !resolvedUserId}
           className="w-full rounded-xl bg-answer-square py-4 text-xl font-bold transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Join
         </button>
+
+        {isGuest ? (
+          <button
+            onClick={handleSpotifyLogin}
+            className="text-sm text-white/50 underline transition hover:text-white/80"
+          >
+            Sign in with Spotify for personalized questions
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              sessionStorage.clear();
+              setResolvedUserId(generateGuestId());
+              setName("");
+            }}
+            className="text-sm text-white/50 underline transition hover:text-white/80"
+          >
+            Join as guest instead
+          </button>
+        )}
       </div>
     </main>
   );

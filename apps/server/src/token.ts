@@ -10,6 +10,10 @@ export async function storeTokens(
   await redis.set(`player:${userId}:refresh`, refreshToken);
 }
 
+export async function isAuthenticated(userId: string): Promise<boolean> {
+  return (await redis.exists(`player:${userId}:refresh`)) === 1;
+}
+
 export async function getValidToken(userId: string): Promise<string> {
   const token = await redis.get(`player:${userId}:token`);
   if (token) return token;

@@ -24,7 +24,7 @@ import {
   setDeviceId,
 } from "./lobby";
 import { cachePlayerSpotifyData } from "./spotify-data";
-import { getValidToken } from "./token";
+import { isAuthenticated, getValidToken } from "./token";
 
 interface SocketData {
   playerId?: string;
@@ -106,11 +106,14 @@ io.on("connection", (socket) => {
     const { lobbyId, playerId, displayName } = result.data;
     socket.data.playerId = playerId;
     socket.data.lobbyId = lobbyId;
-    const player = { playerId, displayName };
+    const isGuest = !(await isAuthenticated(playerId));
+    const player = { playerId, displayName, isGuest };
     await addPlayerToLobby(lobbyId, player);
-    cachePlayerSpotifyData(playerId).catch((err) =>
-      console.error(`Failed to cache Spotify data for ${playerId}:`, err),
-    );
+    if (!isGuest) {
+      cachePlayerSpotifyData(playerId).catch((err) =>
+        console.error(`Failed to cache Spotify data for ${playerId}:`, err),
+      );
+    }
     socket.join(`lobby:${lobbyId}`);
     io.to(`lobby:${lobbyId}`).emit("lobby:player_joined", { player });
   });
