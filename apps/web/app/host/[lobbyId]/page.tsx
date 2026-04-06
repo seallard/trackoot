@@ -19,6 +19,7 @@ export default function HostLobbyPage() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const userId = useLobbyStore((s) => s.userId);
   const pin = useLobbyStore((s) => s.pin);
   const players = useLobbyStore((s) => s.players);
   const gamePhase = useLobbyStore((s) => s.gamePhase);
@@ -32,6 +33,39 @@ export default function HostLobbyPage() {
   const startRound = useLobbyStore((s) => s.startRound);
   const endRound = useLobbyStore((s) => s.endRound);
   const endGame = useLobbyStore((s) => s.endGame);
+
+  // Load Spotify Web Playback SDK and initialize player
+  useEffect(() => {
+    if (!userId) return;
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      const player = new window.Spotify.Player({
+        name: "Trackoot Host",
+        getOAuthToken: (cb) => {
+          fetch(`${SERVER_URL}/auth/token/${userId}`)
+            .then((r) => r.json())
+            .then(({ accessToken }: { accessToken: string }) => cb(accessToken))
+            .catch(console.error);
+        },
+        volume: 0.8,
+      });
+
+      player.addListener("ready", ({ device_id }) => {
+        getSocket().emit("host:player_ready", { lobbyId, deviceId: device_id });
+      });
+
+      player.connect();
+    };
+
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [lobbyId, userId]);
 
   // Set up socket listeners
   useEffect(() => {

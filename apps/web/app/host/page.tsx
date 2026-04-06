@@ -13,7 +13,11 @@ export default function HostPage() {
   const userId = useLobbyStore((s) => s.userId);
 
   async function handleCreateLobby() {
-    const res = await fetch(`${SERVER_URL}/lobbies`, { method: "POST" });
+    const res = await fetch(`${SERVER_URL}/lobbies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostId: userId }),
+    });
     const { lobbyId, pin } = await res.json();
     setPin(pin);
     router.push(`/host/${lobbyId}`);

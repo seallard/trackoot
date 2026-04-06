@@ -5,6 +5,7 @@ import express from "express";
 import { Server } from "socket.io";
 import {
   HostJoinSchema,
+  HostPlayerReadySchema,
   HostStartGameSchema,
   PlayerJoinSchema,
   PlayerSubmitAnswerSchema,
@@ -12,8 +13,16 @@ import {
 import type { ClientToServerEvents, ServerToClientEvents } from "@trackoot/types";
 import authRouter from "./auth";
 import { recordAnswer, startRound } from "./game";
-import { addPlayerToLobby, createLobby, getLobby, getLobbyIdByPin, getPlayers } from "./lobby";
+import {
+  addPlayerToLobby,
+  createLobby,
+  getLobby,
+  getLobbyIdByPin,
+  getPlayers,
+  setDeviceId,
+} from "./lobby";
 import { cachePlayerSpotifyData } from "./spotify-data";
+import { getValidToken } from "./token";
 
 interface SocketData {
   playerId?: string;
@@ -28,9 +37,23 @@ app.use(express.json());
 
 app.use("/auth", authRouter);
 
-app.post("/lobbies", async (_req, res) => {
-  const result = await createLobby();
+app.post("/lobbies", async (req, res) => {
+  const { hostId } = req.body as { hostId?: string };
+  if (!hostId) {
+    res.status(400).json({ error: "hostId required" });
+    return;
+  }
+  const result = await createLobby(hostId);
   res.json(result);
+});
+
+app.get("/auth/token/:userId", async (req, res) => {
+  const token = await getValidToken(req.params.userId).catch(() => null);
+  if (!token) {
+    res.status(404).json({ error: "No token found" });
+    return;
+  }
+  res.json({ accessToken: token });
 });
 
 // More specific route must come before /:lobbyId
@@ -67,6 +90,12 @@ io.on("connection", (socket) => {
     if (!result.success) return;
     socket.data.lobbyId = result.data.lobbyId;
     socket.join(`lobby:${result.data.lobbyId}`);
+  });
+
+  socket.on("host:player_ready", async (payload) => {
+    const result = HostPlayerReadySchema.safeParse(payload);
+    if (!result.success) return;
+    await setDeviceId(result.data.lobbyId, result.data.deviceId);
   });
 
   socket.on("player:join", async (payload) => {

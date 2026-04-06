@@ -4,12 +4,14 @@ import type {
   ClientToServerEvents,
   Player,
   PlayerScore,
+  Question,
   Round,
   ServerToClientEvents,
   SpotifyPlayerData,
 } from "@trackoot/types";
-import { getPlayers, recordScore } from "./lobby";
+import { getLobby, getPlayers, recordScore } from "./lobby";
 import { generateQuestions, type QuestionEntry } from "./questions";
+import { pausePlayback, playTrack } from "./spotify-api";
 import { getPlayerSpotifyData } from "./spotify-data";
 import { getValidToken } from "./token";
 
@@ -35,6 +37,12 @@ interface ActiveRound {
 }
 
 const activeRounds = new Map<string, ActiveRound>();
+
+function getTrackId(question: Question): string | undefined {
+  if (question.type === "WHO_LISTENS_MOST_ARTIST" || question.type === "WHO_LISTENS_MOST_TRACK") {
+    return question.trackId;
+  }
+}
 
 function computeScore(receivedAt: number, roundStartAt: number): number {
   const serverReceivedMs = receivedAt - roundStartAt;
@@ -63,6 +71,20 @@ function beginRound(
   });
 
   io.to(`lobby:${lobbyId}`).emit("game:round_start", { round: entry.round, endsAt });
+
+  const trackId = getTrackId(entry.round.question);
+  if (trackId) {
+    getLobby(lobbyId)
+      .then(async (lobby) => {
+        if (!lobby?.deviceId || !lobby.hostId) {
+          console.warn(`[${lobbyId}] Skipping playback — deviceId: ${lobby?.deviceId}, hostId: ${lobby?.hostId}`);
+          return;
+        }
+        const token = await getValidToken(lobby.hostId);
+        await playTrack(token, lobby.deviceId, trackId);
+      })
+      .catch((err) => console.error(`[${lobbyId}] Playback start failed:`, err));
+  }
 }
 
 export async function startRound(io: IoServer, lobbyId: string, players: Player[]): Promise<void> {
@@ -115,6 +137,14 @@ async function endRound(io: IoServer, lobbyId: string): Promise<void> {
   const active = activeRounds.get(lobbyId);
   if (!active || active.ended) return;
   active.ended = true;
+
+  getLobby(lobbyId)
+    .then(async (lobby) => {
+      if (!lobby?.deviceId || !lobby.hostId) return;
+      const token = await getValidToken(lobby.hostId);
+      await pausePlayback(token, lobby.deviceId);
+    })
+    .catch((err) => console.error(`[${lobbyId}] Playback pause failed:`, err));
 
   const roundStartAt = active.endsAt - ROUND_DURATION_MS;
   const players = await getPlayers(lobbyId);

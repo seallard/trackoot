@@ -83,3 +83,22 @@ export async function getArtistTopTrack(
   const { tracks } = ArtistTopTracksSchema.parse(await res.json());
   return tracks[0]?.id ?? null;
 }
+
+export async function playTrack(
+  accessToken: string,
+  deviceId: string,
+  trackId: string,
+): Promise<void> {
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ uris: [`spotify:track:${trackId}`] }),
+  });
+}
+
+export async function pausePlayback(accessToken: string, deviceId: string): Promise<void> {
+  await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
