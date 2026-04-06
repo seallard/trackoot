@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-answer-triangle: #e21b3c;
+  --color-answer-diamond: #1368ce;
+  --color-answer-circle: #d89e00;
+  --color-answer-square: #26890c;
+  --color-game-bg: #2d1b69;
+  --color-game-surface: #46178f;
+}
+
+html,
+body {
+  @apply h-full;
+}

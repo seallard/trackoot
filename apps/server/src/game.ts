@@ -77,7 +77,9 @@ function beginRound(
     getLobby(lobbyId)
       .then(async (lobby) => {
         if (!lobby?.deviceId || !lobby.hostId) {
-          console.warn(`[${lobbyId}] Skipping playback — deviceId: ${lobby?.deviceId}, hostId: ${lobby?.hostId}`);
+          console.warn(
+            `[${lobbyId}] Skipping playback — deviceId: ${lobby?.deviceId}, hostId: ${lobby?.hostId}`,
+          );
           return;
         }
         const token = await getValidToken(lobby.hostId);
