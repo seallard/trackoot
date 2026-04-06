@@ -239,10 +239,15 @@ export default function HostLobbyPage() {
               key={p.playerId}
               className="flex items-center gap-2 rounded-full bg-game-surface px-4 py-2 font-semibold"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-sm font-black">
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black ${p.isGuest ? "bg-white/20" : "bg-answer-square"}`}
+              >
                 {p.displayName[0].toUpperCase()}
               </span>
               {p.displayName}
+              {p.isGuest && (
+                <span className="text-xs font-normal text-white/40">guest</span>
+              )}
             </div>
           ))}
           {players.length === 0 && (
