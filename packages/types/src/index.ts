@@ -156,6 +156,11 @@ export interface GameOverPayload {
   finalStandings: PlayerScore[];
 }
 
+export interface GameRoundAnswerStatusPayload {
+  answeredCount: number;
+  totalPlayers: number;
+}
+
 // ---- Socket.io Typed Event Maps ----
 
 export interface ServerToClientEvents {
@@ -164,6 +169,7 @@ export interface ServerToClientEvents {
   "game:round_start": (payload: GameRoundStartPayload) => void;
   "game:round_end": (payload: GameRoundEndPayload) => void;
   "game:over": (payload: GameOverPayload) => void;
+  "game:round_answer_status": (payload: GameRoundAnswerStatusPayload) => void;
 }
 
 export interface ClientToServerEvents {

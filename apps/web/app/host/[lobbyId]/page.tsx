@@ -80,12 +80,15 @@ export default function HostLobbyPage() {
   const correctSymbol = useLobbyStore((s) => s.correctSymbol);
   const scores = useLobbyStore((s) => s.scores);
   const finalStandings = useLobbyStore((s) => s.finalStandings);
+  const answeredCount = useLobbyStore((s) => s.answeredCount);
+  const totalPlayers = useLobbyStore((s) => s.totalPlayers);
 
   const addPlayer = useLobbyStore((s) => s.addPlayer);
   const startRound = useLobbyStore((s) => s.startRound);
   const endRound = useLobbyStore((s) => s.endRound);
   const endGame = useLobbyStore((s) => s.endGame);
   const resetGame = useLobbyStore((s) => s.resetGame);
+  const setAnsweredCount = useLobbyStore((s) => s.setAnsweredCount);
 
   // Load Spotify Web Playback SDK and initialize player
   useEffect(() => {
@@ -130,6 +133,9 @@ export default function HostLobbyPage() {
     socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
+    socket.on("game:round_answer_status", ({ answeredCount, totalPlayers }) =>
+      setAnsweredCount(answeredCount, totalPlayers),
+    );
 
     return () => {
       socket.off("lobby:player_joined");
@@ -137,8 +143,9 @@ export default function HostLobbyPage() {
       socket.off("game:round_start");
       socket.off("game:round_end");
       socket.off("game:over");
+      socket.off("game:round_answer_status");
     };
-  }, [lobbyId, addPlayer, startRound, endRound, endGame, resetGame]);
+  }, [lobbyId, addPlayer, startRound, endRound, endGame, resetGame, setAnsweredCount]);
 
   // Countdown timer
   useEffect(() => {
@@ -247,6 +254,9 @@ export default function HostLobbyPage() {
           {/* Top bar */}
           <div className="flex items-center justify-between bg-game-surface px-8 py-4">
             <span className="font-semibold text-white/70">Round {round.roundNumber}</span>
+            <span className="text-lg font-semibold text-white/60">
+              {answeredCount} / {totalPlayers}
+            </span>
             <span className={cn("text-5xl font-black tabular-nums", timerTextColor)}>
               {secondsLeft ?? ROUND_DURATION_S}
             </span>

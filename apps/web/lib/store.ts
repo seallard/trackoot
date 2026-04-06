@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import type { AnswerSymbol, Player, PlayerScore, Round } from "@trackoot/types";
+import { create } from "zustand";
 
 type GamePhase = "waiting" | "round_active" | "round_results" | "game_over";
 
@@ -24,6 +24,8 @@ interface LobbyStore {
   scores: PlayerScore[] | null;
   finalStandings: PlayerScore[] | null;
   submittedSymbol: AnswerSymbol | null;
+  answeredCount: number;
+  totalPlayers: number;
 
   // Actions
   setAuth: (userId: string, displayName: string, role: "host" | "player") => void;
@@ -34,6 +36,7 @@ interface LobbyStore {
   endRound: (correctSymbol: AnswerSymbol, scores: PlayerScore[]) => void;
   endGame: (finalStandings: PlayerScore[]) => void;
   setSubmittedSymbol: (symbol: AnswerSymbol) => void;
+  setAnsweredCount: (answeredCount: number, totalPlayers: number) => void;
   resetGame: () => void;
 }
 
@@ -51,6 +54,8 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   scores: null,
   finalStandings: null,
   submittedSymbol: null,
+  answeredCount: 0,
+  totalPlayers: 0,
 
   setAuth: (userId, displayName, role) => set({ userId, displayName, playerId: userId, role }),
   setPin: (pin) => set({ pin }),
@@ -69,10 +74,13 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
       correctSymbol: null,
       submittedSymbol: null,
       scores: null,
+      answeredCount: 0,
+      totalPlayers: 0,
     }),
   endRound: (correctSymbol, scores) => set({ gamePhase: "round_results", correctSymbol, scores }),
   endGame: (finalStandings) => set({ gamePhase: "game_over", finalStandings }),
   setSubmittedSymbol: (symbol) => set({ submittedSymbol: symbol }),
+  setAnsweredCount: (answeredCount, totalPlayers) => set({ answeredCount, totalPlayers }),
   resetGame: () =>
     set({
       gamePhase: "waiting",

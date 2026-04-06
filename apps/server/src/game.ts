@@ -1,4 +1,3 @@
-import type { Server } from "socket.io";
 import type {
   AnswerSymbol,
   ClientToServerEvents,
@@ -9,8 +8,9 @@ import type {
   ServerToClientEvents,
   SpotifyPlayerData,
 } from "@trackoot/types";
+import type { Server } from "socket.io";
 import { getLobby, getPlayers, recordScore } from "./lobby";
-import { generateQuestions, type QuestionEntry } from "./questions";
+import { type QuestionEntry, generateQuestions } from "./questions";
 import { pausePlayback, playTrack } from "./spotify-api";
 import { getPlayerSpotifyData } from "./spotify-data";
 import { getValidToken } from "./token";
@@ -128,6 +128,11 @@ export async function recordAnswer(
   if (active.answers.has(playerId)) return;
 
   active.answers.set(playerId, { symbol, receivedAt: Date.now() });
+
+  io.to(`lobby:${lobbyId}`).emit("game:round_answer_status", {
+    answeredCount: active.answers.size,
+    totalPlayers: active.playerCount,
+  });
 
   if (active.answers.size >= active.playerCount) {
     clearTimeout(active.timer);
