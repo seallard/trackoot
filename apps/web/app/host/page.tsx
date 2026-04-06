@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/useAuth";
 import { useLobbyStore } from "@/lib/store";
+import { useAuth } from "@/lib/useAuth";
+import { useRouter } from "next/navigation";
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
 
@@ -36,6 +36,7 @@ export default function HostPage() {
       <p className="text-white/70">Sign in successful. Ready to host?</p>
       {userId && (
         <button
+          type="button"
           onClick={handleCreateLobby}
           className="rounded-full bg-white px-10 py-4 text-xl font-bold text-game-bg transition hover:bg-white/90 active:scale-95"
         >
