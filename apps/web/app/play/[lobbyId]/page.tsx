@@ -51,7 +51,7 @@ export default function PlayPage() {
     socket.on("connect", joinRoom);
 
     socket.on("lobby:reset", () => resetGame());
-    socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
+    socket.on("game:round_start", ({ round, endsAt, playerCount }) => startRound(round, endsAt, playerCount));
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
 

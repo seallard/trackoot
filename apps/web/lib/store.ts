@@ -33,7 +33,7 @@ interface LobbyStore {
   setPin: (pin: string) => void;
   addPlayer: (player: Player) => void;
   setPlayerIdentity: (playerId: string, displayName: string) => void;
-  startRound: (round: Round, endsAt: number) => void;
+  startRound: (round: Round, endsAt: number, playerCount: number) => void;
   endRound: (correctSymbol: AnswerSymbol, scores: PlayerScore[]) => void;
   endGame: (finalStandings: PlayerScore[]) => void;
   setSubmittedSymbol: (symbol: AnswerSymbol) => void;
@@ -69,7 +69,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
         : [...state.players, player],
     })),
   setPlayerIdentity: (playerId, displayName) => set({ playerId, displayName }),
-  startRound: (round, endsAt) =>
+  startRound: (round, endsAt, playerCount) =>
     set({
       gamePhase: "round_active",
       round,
@@ -78,7 +78,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
       submittedSymbol: null,
       scores: null,
       answeredCount: 0,
-      totalPlayers: 0,
+      totalPlayers: playerCount,
       currentTrackId: null,
     }),
   endRound: (correctSymbol, scores) => set({ gamePhase: "round_results", correctSymbol, scores }),

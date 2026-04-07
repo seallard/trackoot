@@ -66,7 +66,7 @@ function beginRound(
   };
   activeRounds.set(lobbyId, active);
 
-  io.to(`lobby:${lobbyId}`).emit("game:round_start", { round: entry.round, endsAt });
+  io.to(`lobby:${lobbyId}`).emit("game:round_start", { round: entry.round, endsAt, playerCount });
 
   const question = entry.round.question;
 

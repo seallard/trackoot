@@ -145,6 +145,7 @@ export interface LobbyPlayerJoinedPayload {
 export interface GameRoundStartPayload {
   round: Round;
   endsAt: number; // Unix timestamp ms
+  playerCount: number;
 }
 
 export interface GameRoundEndPayload {

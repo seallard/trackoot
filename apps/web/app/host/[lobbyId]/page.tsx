@@ -148,7 +148,7 @@ export default function HostLobbyPage() {
 
     socket.on("lobby:player_joined", ({ player }) => addPlayer(player));
     socket.on("lobby:reset", () => resetGame());
-    socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
+    socket.on("game:round_start", ({ round, endsAt, playerCount }) => startRound(round, endsAt, playerCount));
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
     socket.on("game:round_answer_status", ({ answeredCount, totalPlayers }) =>

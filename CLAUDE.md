@@ -34,7 +34,7 @@ LOBBY_WAITING → ROUND_COUNTDOWN → ROUND_ACTIVE → ROUND_RESULTS → [next r
 - Post-round results display: 5 seconds before next round
 - Lobby PIN: 6-digit random number
 - Max players per lobby: 10
-- Min players to start: 2
+- Min players to start: 1 (for dev)
 - Number of rounds: determined by question generation (approx. 1 per player × question types available)
 
 ### Scoring
