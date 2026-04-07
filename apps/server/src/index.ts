@@ -50,7 +50,7 @@ app.post("/lobbies", async (req, res) => {
 });
 
 app.get("/auth/token/:userId", async (req, res) => {
-  const token = await getValidToken(req.params.userId).catch(() => null);
+  const token = await getValidToken("host", req.params.userId).catch(() => null);
   if (!token) {
     res.status(404).json({ error: "No token found" });
     return;
@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
     const { lobbyId, playerId, displayName } = result.data;
     socket.data.playerId = playerId;
     socket.data.lobbyId = lobbyId;
-    const isGuest = !(await isAuthenticated(playerId));
+    const isGuest = !(await isAuthenticated("player", playerId));
     const player = { playerId, displayName, isGuest };
     await addPlayerToLobby(lobbyId, player);
     if (!isGuest) {

@@ -25,6 +25,10 @@ export function getAuthUrl(role: "host" | "player", state: string): string {
     scope: role === "host" ? HOST_SCOPES : PLAYER_SCOPES,
     redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
     state,
+    // Force the consent screen so the host always explicitly grants the streaming scope.
+    // Without this, Spotify silently re-uses a previous grant that may predate the
+    // streaming scope being added, resulting in a 403 from the Web Playback SDK.
+    show_dialog: "true",
   });
   return `${ACCOUNTS_URL}/authorize?${params}`;
 }

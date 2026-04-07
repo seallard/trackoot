@@ -161,6 +161,10 @@ export interface GameRoundAnswerStatusPayload {
   totalPlayers: number;
 }
 
+export interface GameTrackChangedPayload {
+  trackId: string;
+}
+
 // ---- Socket.io Typed Event Maps ----
 
 export interface ServerToClientEvents {
@@ -170,6 +174,7 @@ export interface ServerToClientEvents {
   "game:round_end": (payload: GameRoundEndPayload) => void;
   "game:over": (payload: GameOverPayload) => void;
   "game:round_answer_status": (payload: GameRoundAnswerStatusPayload) => void;
+  "game:track_changed": (payload: GameTrackChangedPayload) => void;
 }
 
 export interface ClientToServerEvents {

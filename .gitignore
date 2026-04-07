@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 .next/
 dist/
+*.tsbuildinfo
 
 # Environment variables
 .env

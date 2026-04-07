@@ -25,9 +25,54 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function buildOptions(players: Player[]): {
+  options: AnswerOption[];
+  correctFor: (playerId: string) => AnswerSymbol | undefined;
+} {
+  const shuffled = shuffle([...players]);
+  const options: AnswerOption[] = ANSWER_SYMBOLS.map((symbol, i) => {
+    const p = shuffled[i];
+    return p
+      ? { symbol, label: p.displayName, playerId: p.playerId }
+      : { symbol, label: "?", playerId: undefined };
+  });
+  return {
+    options,
+    correctFor: (id) => options.find((o) => o.playerId === id)?.symbol,
+  };
+}
+
 interface ArtistCandidate {
   artist: SpotifyArtist;
   playerRanks: Array<{ playerId: string; rank: number }>;
+}
+
+function generateWhoseTasteEntries(
+  players: Player[],
+  playerDataMap: Map<string, SpotifyPlayerData>,
+): QuestionEntry[] {
+  const entries: QuestionEntry[] = [];
+
+  for (const player of players) {
+    if (player.isGuest) continue;
+    const data = playerDataMap.get(player.playerId);
+    if (!data || data.topTracks.length < 5) continue;
+
+    const trackIds = shuffle([...data.topTracks])
+      .slice(0, 5)
+      .map((t) => t.id);
+
+    const { options, correctFor } = buildOptions(players);
+    const correctSymbol = correctFor(player.playerId);
+    if (!correctSymbol) continue;
+
+    entries.push({
+      round: { roundNumber: 0, question: { type: "WHOSE_TASTE", trackIds }, options },
+      correctSymbol,
+    });
+  }
+
+  return entries;
 }
 
 export async function generateQuestions(
@@ -35,7 +80,10 @@ export async function generateQuestions(
   playerDataMap: Map<string, SpotifyPlayerData>,
   accessToken: string,
 ): Promise<QuestionEntry[]> {
-  // Collect all unique artists and each player's rank for them (lower index = higher rank)
+  // --- WHOSE_TASTE pool: one per non-guest player with enough tracks ---
+  const tasteEntries = generateWhoseTasteEntries(players, playerDataMap);
+
+  // --- WHO_LISTENS_MOST_ARTIST pool ---
   const artistMap = new Map<string, ArtistCandidate>();
 
   for (const player of players) {
@@ -52,42 +100,31 @@ export async function generateQuestions(
     }
   }
 
-  // Shuffle first so within each tier the order is random, then sort by player count
   const candidates = shuffle([...artistMap.values()]).sort(
     (a, b) => b.playerRanks.length - a.playerRanks.length,
   );
 
-  const limit = Math.min(players.length * 3, MAX_ROUNDS);
-  const selected = candidates.slice(0, limit);
+  const artistLimit = Math.min(players.length * 3, MAX_ROUNDS - tasteEntries.length);
+  const selected = candidates.slice(0, artistLimit);
 
-  const questions: QuestionEntry[] = [];
+  const artistEntries: QuestionEntry[] = [];
 
   for (const { artist, playerRanks } of selected) {
-    // Correct player: lowest rank index (highest position in their top-50), tie-break alphabetically
     const sorted = [...playerRanks].sort((a, b) =>
       a.rank !== b.rank ? a.rank - b.rank : a.playerId.localeCompare(b.playerId),
     );
     const correctPlayerId = sorted[0].playerId;
 
-    // Get the artist's top track via Spotify API
     const trackId = await getArtistTopTrack(artist.id, accessToken);
     if (!trackId) continue;
 
-    // Shuffle players and assign symbols; pad remaining slots with decoys
-    const shuffledPlayers = shuffle([...players]);
-    const options: AnswerOption[] = ANSWER_SYMBOLS.map((symbol, i) => {
-      const player = shuffledPlayers[i];
-      return player
-        ? { symbol, label: player.displayName, playerId: player.playerId }
-        : { symbol, label: "?", playerId: undefined };
-    });
+    const { options, correctFor } = buildOptions(players);
+    const correctSymbol = correctFor(correctPlayerId);
+    if (!correctSymbol) continue;
 
-    const correctSymbol = options.find((o) => o.playerId === correctPlayerId)?.symbol;
-    if (!correctSymbol) continue; // shouldn't happen, but guard anyway
-
-    questions.push({
+    artistEntries.push({
       round: {
-        roundNumber: questions.length + 1,
+        roundNumber: 0,
         question: {
           type: "WHO_LISTENS_MOST_ARTIST",
           artistId: artist.id,
@@ -101,5 +138,10 @@ export async function generateQuestions(
     });
   }
 
-  return questions;
+  // Combine, shuffle, and assign final round numbers
+  const all = shuffle([...tasteEntries, ...artistEntries]);
+  for (let i = 0; i < all.length; i++) {
+    all[i].round.roundNumber = i + 1;
+  }
+  return all;
 }

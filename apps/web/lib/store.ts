@@ -26,6 +26,7 @@ interface LobbyStore {
   submittedSymbol: AnswerSymbol | null;
   answeredCount: number;
   totalPlayers: number;
+  currentTrackId: string | null;
 
   // Actions
   setAuth: (userId: string, displayName: string, role: "host" | "player") => void;
@@ -37,6 +38,7 @@ interface LobbyStore {
   endGame: (finalStandings: PlayerScore[]) => void;
   setSubmittedSymbol: (symbol: AnswerSymbol) => void;
   setAnsweredCount: (answeredCount: number, totalPlayers: number) => void;
+  setTrackChanged: (trackId: string) => void;
   resetGame: () => void;
 }
 
@@ -56,6 +58,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   submittedSymbol: null,
   answeredCount: 0,
   totalPlayers: 0,
+  currentTrackId: null,
 
   setAuth: (userId, displayName, role) => set({ userId, displayName, playerId: userId, role }),
   setPin: (pin) => set({ pin }),
@@ -76,11 +79,13 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
       scores: null,
       answeredCount: 0,
       totalPlayers: 0,
+      currentTrackId: null,
     }),
   endRound: (correctSymbol, scores) => set({ gamePhase: "round_results", correctSymbol, scores }),
   endGame: (finalStandings) => set({ gamePhase: "game_over", finalStandings }),
   setSubmittedSymbol: (symbol) => set({ submittedSymbol: symbol }),
   setAnsweredCount: (answeredCount, totalPlayers) => set({ answeredCount, totalPlayers }),
+  setTrackChanged: (currentTrackId) => set({ currentTrackId }),
   resetGame: () =>
     set({
       gamePhase: "waiting",

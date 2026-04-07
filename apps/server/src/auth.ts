@@ -66,7 +66,7 @@ router.get("/spotify/callback", async (req, res) => {
   const { role } = stateData.data;
   const { accessToken, refreshToken } = await exchangeCode(code);
   const { id: userId, displayName } = await getMe(accessToken);
-  await storeTokens(userId, accessToken, refreshToken);
+  await storeTokens(role, userId, accessToken, refreshToken);
 
   // Pass identity as URL params — avoids cross-origin cookie issues in development
   const params = new URLSearchParams({ userId, displayName, role });

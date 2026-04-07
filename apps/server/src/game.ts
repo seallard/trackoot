@@ -3,7 +3,6 @@ import type {
   ClientToServerEvents,
   Player,
   PlayerScore,
-  Question,
   Round,
   ServerToClientEvents,
   SpotifyPlayerData,
@@ -31,18 +30,13 @@ interface ActiveRound {
   correctSymbol: AnswerSymbol;
   answers: Map<string, { symbol: AnswerSymbol; receivedAt: number }>;
   timer: ReturnType<typeof setTimeout>;
+  trackTimers: ReturnType<typeof setTimeout>[];
   ended: boolean;
   playerCount: number;
   questionQueue: QuestionEntry[];
 }
 
 const activeRounds = new Map<string, ActiveRound>();
-
-function getTrackId(question: Question): string | undefined {
-  if (question.type === "WHO_LISTENS_MOST_ARTIST" || question.type === "WHO_LISTENS_MOST_TRACK") {
-    return question.trackId;
-  }
-}
 
 function computeScore(receivedAt: number, roundStartAt: number): number {
   const serverReceivedMs = receivedAt - roundStartAt;
@@ -59,21 +53,24 @@ function beginRound(
   const endsAt = Date.now() + ROUND_DURATION_MS;
   const timer = setTimeout(() => endRound(io, lobbyId), ROUND_DURATION_MS);
 
-  activeRounds.set(lobbyId, {
+  const active: ActiveRound = {
     round: entry.round,
     endsAt,
     correctSymbol: entry.correctSymbol,
     answers: new Map(),
     timer,
+    trackTimers: [],
     ended: false,
     playerCount,
     questionQueue: queue,
-  });
+  };
+  activeRounds.set(lobbyId, active);
 
   io.to(`lobby:${lobbyId}`).emit("game:round_start", { round: entry.round, endsAt });
 
-  const trackId = getTrackId(entry.round.question);
-  if (trackId) {
+  const question = entry.round.question;
+
+  if (question.type === "WHO_LISTENS_MOST_ARTIST") {
     getLobby(lobbyId)
       .then(async (lobby) => {
         if (!lobby?.deviceId || !lobby.hostId) {
@@ -82,10 +79,24 @@ function beginRound(
           );
           return;
         }
-        const token = await getValidToken(lobby.hostId);
-        await playTrack(token, lobby.deviceId, trackId);
+        const token = await getValidToken("host", lobby.hostId);
+        await playTrack(token, lobby.deviceId, question.trackId);
       })
       .catch((err) => console.error(`[${lobbyId}] Playback start failed:`, err));
+  } else if (question.type === "WHOSE_TASTE") {
+    question.trackIds.forEach((trackId, i) => {
+      const t = setTimeout(() => {
+        getLobby(lobbyId)
+          .then(async (lobby) => {
+            if (!lobby?.deviceId || !lobby.hostId) return;
+            const token = await getValidToken("host", lobby.hostId);
+            await playTrack(token, lobby.deviceId, trackId);
+            io.to(`lobby:${lobbyId}`).emit("game:track_changed", { trackId });
+          })
+          .catch((err) => console.error(`[${lobbyId}] Track ${i + 1} playback failed:`, err));
+      }, i * 4000);
+      active.trackTimers.push(t);
+    });
   }
 }
 
@@ -105,7 +116,7 @@ export async function startRound(io: IoServer, lobbyId: string, players: Player[
     console.error(`[${lobbyId}] No cached Spotify data found for any player`);
     return;
   }
-  const accessToken = await getValidToken(tokenPlayerId);
+  const accessToken = await getValidToken("player", tokenPlayerId);
 
   const questions = await generateQuestions(players, playerDataMap, accessToken);
   if (questions.length === 0) {
@@ -145,10 +156,12 @@ async function endRound(io: IoServer, lobbyId: string): Promise<void> {
   if (!active || active.ended) return;
   active.ended = true;
 
+  for (const t of active.trackTimers) clearTimeout(t);
+
   getLobby(lobbyId)
     .then(async (lobby) => {
       if (!lobby?.deviceId || !lobby.hostId) return;
-      const token = await getValidToken(lobby.hostId);
+      const token = await getValidToken("host", lobby.hostId);
       await pausePlayback(token, lobby.deviceId);
     })
     .catch((err) => console.error(`[${lobbyId}] Playback pause failed:`, err));

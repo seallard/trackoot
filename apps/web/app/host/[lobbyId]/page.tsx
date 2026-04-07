@@ -82,6 +82,7 @@ export default function HostLobbyPage() {
   const finalStandings = useLobbyStore((s) => s.finalStandings);
   const answeredCount = useLobbyStore((s) => s.answeredCount);
   const totalPlayers = useLobbyStore((s) => s.totalPlayers);
+  const currentTrackId = useLobbyStore((s) => s.currentTrackId);
 
   const addPlayer = useLobbyStore((s) => s.addPlayer);
   const startRound = useLobbyStore((s) => s.startRound);
@@ -89,6 +90,7 @@ export default function HostLobbyPage() {
   const endGame = useLobbyStore((s) => s.endGame);
   const resetGame = useLobbyStore((s) => s.resetGame);
   const setAnsweredCount = useLobbyStore((s) => s.setAnsweredCount);
+  const setTrackChanged = useLobbyStore((s) => s.setTrackChanged);
 
   // Load Spotify Web Playback SDK and initialize player
   useEffect(() => {
@@ -126,7 +128,13 @@ export default function HostLobbyPage() {
   // Set up socket listeners
   useEffect(() => {
     const socket = getSocket();
-    socket.emit("host:join", { lobbyId });
+
+    function joinRoom() {
+      socket.emit("host:join", { lobbyId });
+    }
+
+    joinRoom();
+    socket.on("connect", joinRoom);
 
     socket.on("lobby:player_joined", ({ player }) => addPlayer(player));
     socket.on("lobby:reset", () => resetGame());
@@ -136,16 +144,28 @@ export default function HostLobbyPage() {
     socket.on("game:round_answer_status", ({ answeredCount, totalPlayers }) =>
       setAnsweredCount(answeredCount, totalPlayers),
     );
+    socket.on("game:track_changed", ({ trackId }) => setTrackChanged(trackId));
 
     return () => {
+      socket.off("connect", joinRoom);
       socket.off("lobby:player_joined");
       socket.off("lobby:reset");
       socket.off("game:round_start");
       socket.off("game:round_end");
       socket.off("game:over");
       socket.off("game:round_answer_status");
+      socket.off("game:track_changed");
     };
-  }, [lobbyId, addPlayer, startRound, endRound, endGame, resetGame, setAnsweredCount]);
+  }, [
+    lobbyId,
+    addPlayer,
+    startRound,
+    endRound,
+    endGame,
+    resetGame,
+    setAnsweredCount,
+    setTrackChanged,
+  ]);
 
   // Countdown timer
   useEffect(() => {
@@ -272,18 +292,37 @@ export default function HostLobbyPage() {
 
           {/* Question */}
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center">
-            {round.question.type === "WHO_LISTENS_MOST_ARTIST" && round.question.artistImageUrl && (
-              <img
-                src={round.question.artistImageUrl}
-                alt={round.question.artistName}
-                className="h-32 w-32 rounded-full object-cover shadow-2xl"
-              />
+            {round.question.type === "WHO_LISTENS_MOST_ARTIST" && (
+              <>
+                {round.question.artistImageUrl && (
+                  <img
+                    src={round.question.artistImageUrl}
+                    alt={round.question.artistName}
+                    className="h-32 w-32 rounded-full object-cover shadow-2xl"
+                  />
+                )}
+                <h2 className="text-4xl font-black leading-tight">
+                  Who listens the most to {round.question.artistName}?
+                </h2>
+              </>
             )}
-            <h2 className="text-4xl font-black leading-tight">
-              {round.question.type === "WHO_LISTENS_MOST_ARTIST"
-                ? `Who listens the most to ${round.question.artistName}?`
-                : "Who listens the most?"}
-            </h2>
+            {round.question.type === "WHOSE_TASTE" &&
+              (() => {
+                const trackIds = round.question.trackIds;
+                const trackNumber = currentTrackId ? trackIds.indexOf(currentTrackId) + 1 : 0;
+                return (
+                  <>
+                    <h2 className="text-4xl font-black leading-tight">
+                      Whose music taste is this?
+                    </h2>
+                    {trackNumber > 0 && (
+                      <p className="text-2xl font-semibold text-white/60">
+                        🎵 {trackNumber} / {trackIds.length}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
           </div>
 
           {/* Answer grid */}

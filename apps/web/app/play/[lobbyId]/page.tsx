@@ -40,7 +40,15 @@ export default function PlayPage() {
   useEffect(() => {
     if (!playerId || !displayName) return;
     const socket = getSocket();
-    socket.emit("player:join", { lobbyId, playerId, displayName });
+
+    const pid = playerId;
+    const name = displayName;
+    function joinRoom() {
+      socket.emit("player:join", { lobbyId, playerId: pid, displayName: name });
+    }
+
+    joinRoom();
+    socket.on("connect", joinRoom);
 
     socket.on("lobby:reset", () => resetGame());
     socket.on("game:round_start", ({ round, endsAt }) => startRound(round, endsAt));
@@ -48,6 +56,7 @@ export default function PlayPage() {
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
 
     return () => {
+      socket.off("connect", joinRoom);
       socket.off("lobby:reset");
       socket.off("game:round_start");
       socket.off("game:round_end");

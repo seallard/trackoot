@@ -6,7 +6,7 @@ import { getValidToken } from "./token";
 const TTL = 60 * 60 * 4; // 4 hours
 
 export async function cachePlayerSpotifyData(playerId: string): Promise<void> {
-  const token = await getValidToken(playerId);
+  const token = await getValidToken("player", playerId);
   const [topTracks, topArtists] = await Promise.all([getTopTracks(token), getTopArtists(token)]);
   const data: SpotifyPlayerData = { topTracks, topArtists };
   await redis.set(`player:${playerId}:spotify`, JSON.stringify(data), "EX", TTL);
