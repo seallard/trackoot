@@ -74,7 +74,8 @@ app.get("/lobbies/:lobbyId", async (req, res) => {
     res.status(404).json({ error: "Lobby not found" });
     return;
   }
-  res.json(lobby);
+  const players = await getPlayers(req.params.lobbyId);
+  res.json({ ...lobby, players });
 });
 
 const httpServer = createServer(app);

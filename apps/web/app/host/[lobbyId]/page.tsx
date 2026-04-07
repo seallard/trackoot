@@ -92,6 +92,16 @@ export default function HostLobbyPage() {
   const setAnsweredCount = useLobbyStore((s) => s.setAnsweredCount);
   const setTrackChanged = useLobbyStore((s) => s.setTrackChanged);
 
+  // Fetch current player list (handles host page refresh)
+  useEffect(() => {
+    fetch(`${SERVER_URL}/lobbies/${lobbyId}`)
+      .then((r) => r.json())
+      .then(({ players }: { players: { playerId: string; displayName: string; isGuest: boolean }[] }) => {
+        for (const player of players) addPlayer(player);
+      })
+      .catch(console.error);
+  }, [lobbyId, addPlayer]);
+
   // Load Spotify Web Playback SDK and initialize player
   useEffect(() => {
     if (!userId) return;

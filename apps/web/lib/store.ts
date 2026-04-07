@@ -61,7 +61,7 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   currentTrackId: null,
 
   setAuth: (userId, displayName, role) => set({ userId, displayName, playerId: userId, role }),
-  setPin: (pin) => set({ pin }),
+  setPin: (pin) => set({ pin, players: [] }),
   addPlayer: (player) =>
     set((state) => ({
       players: state.players.some((p) => p.playerId === player.playerId)
