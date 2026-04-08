@@ -1,0 +1,6 @@
+[build]
+buildCommand = "pnpm install --frozen-lockfile && pnpm turbo build --filter=@trackoot/server"
+
+[deploy]
+startCommand = "node apps/server/dist/index.js"
+healthcheckPath = "/health"

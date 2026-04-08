@@ -37,6 +37,8 @@ const origin = process.env.WEB_URL ?? "http://localhost:3000";
 app.use(cors({ origin }));
 app.use(express.json());
 
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
 app.use("/auth", authRouter);
 
 app.post("/lobbies", async (req, res) => {
