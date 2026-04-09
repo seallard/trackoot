@@ -100,12 +100,35 @@ export async function generateQuestions(
     }
   }
 
-  const candidates = shuffle([...artistMap.values()]).sort(
-    (a, b) => b.playerRanks.length - a.playerRanks.length,
-  );
-
   const artistLimit = Math.min(players.length * 3, MAX_ROUNDS - tasteEntries.length);
-  const selected = candidates.slice(0, artistLimit);
+
+  // Pre-compute correct player for each candidate, then group by player and
+  // round-robin pick so each player is the correct answer roughly equally often.
+  const byPlayer = new Map<string, ArtistCandidate[]>();
+  for (const candidate of shuffle([...artistMap.values()])) {
+    const sorted = [...candidate.playerRanks].sort((a, b) =>
+      a.rank !== b.rank ? a.rank - b.rank : a.playerId.localeCompare(b.playerId),
+    );
+    const correctPlayerId = sorted[0].playerId;
+    const bucket = byPlayer.get(correctPlayerId) ?? [];
+    bucket.push(candidate);
+    byPlayer.set(correctPlayerId, bucket);
+  }
+
+  const selected: ArtistCandidate[] = [];
+  const buckets = [...byPlayer.values()];
+  let bucketIndex = 0;
+  while (selected.length < artistLimit) {
+    let added = false;
+    for (const bucket of buckets) {
+      if (bucketIndex < bucket.length && selected.length < artistLimit) {
+        selected.push(bucket[bucketIndex]);
+        added = true;
+      }
+    }
+    if (!added) break;
+    bucketIndex++;
+  }
 
   const artistEntries: QuestionEntry[] = [];
 
