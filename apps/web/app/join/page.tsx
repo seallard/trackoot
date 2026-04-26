@@ -45,8 +45,7 @@ export default function JoinPage() {
       return;
     }
 
-    // No session — guest mode
-    setResolvedUserId(generateGuestId());
+    // No session — wait for user to choose Spotify or guest
   }, [setAuth]);
 
   async function handleJoin() {
@@ -97,22 +96,43 @@ export default function JoinPage() {
 
         {error && <p className="text-center font-semibold text-red-400">{error}</p>}
 
-        <button
-          onClick={handleJoin}
-          disabled={pin.length !== 6 || !name.trim() || !resolvedUserId}
-          className="w-full rounded-xl bg-answer-square py-4 text-xl font-bold transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Join
-        </button>
+        {resolvedUserId && (
+          <button
+            onClick={handleJoin}
+            disabled={pin.length !== 6 || !name.trim()}
+            className="w-full rounded-xl bg-answer-square py-4 text-xl font-bold transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Join
+          </button>
+        )}
 
-        {isGuest ? (
+        {!resolvedUserId && (
+          <>
+            <button
+              onClick={handleSpotifyLogin}
+              className="w-full rounded-xl bg-green-500 py-4 text-xl font-bold transition hover:brightness-110 active:scale-95"
+            >
+              Sign in with Spotify
+            </button>
+            <button
+              onClick={() => setResolvedUserId(generateGuestId())}
+              className="text-sm text-white/50 underline transition hover:text-white/80"
+            >
+              Continue as guest
+            </button>
+          </>
+        )}
+
+        {isGuest && (
           <button
             onClick={handleSpotifyLogin}
             className="text-sm text-white/50 underline transition hover:text-white/80"
           >
             Sign in with Spotify for personalized questions
           </button>
-        ) : (
+        )}
+
+        {resolvedUserId && !isGuest && (
           <button
             onClick={() => {
               sessionStorage.clear();
