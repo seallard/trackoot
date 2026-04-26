@@ -6,6 +6,7 @@ import type {
   Round,
   SpotifyArtist,
   SpotifyPlayerData,
+  SpotifyTrack,
 } from "@trackoot/types";
 import { getArtistTopTrack } from "./spotify-api";
 
@@ -47,6 +48,11 @@ interface ArtistCandidate {
   playerRanks: Array<{ playerId: string; rank: number }>;
 }
 
+interface TrackCandidate {
+  track: SpotifyTrack;
+  playerRanks: Array<{ playerId: string; rank: number }>;
+}
+
 function generateWhoseTasteEntries(
   players: Player[],
   playerDataMap: Map<string, SpotifyPlayerData>,
@@ -75,6 +81,85 @@ function generateWhoseTasteEntries(
   return entries;
 }
 
+function generateWhoListensMostTrackEntries(
+  players: Player[],
+  playerDataMap: Map<string, SpotifyPlayerData>,
+  budget: number,
+): QuestionEntry[] {
+  const nonGuestCount = players.filter((p) => !p.isGuest).length;
+  const minShared = Math.min(4, nonGuestCount);
+
+  const trackMap = new Map<string, TrackCandidate>();
+  for (const player of players) {
+    const data = playerDataMap.get(player.playerId);
+    if (!data) continue;
+    for (let i = 0; i < data.topTracks.length; i++) {
+      const track = data.topTracks[i];
+      const existing = trackMap.get(track.id);
+      if (existing) {
+        existing.playerRanks.push({ playerId: player.playerId, rank: i });
+      } else {
+        trackMap.set(track.id, { track, playerRanks: [{ playerId: player.playerId, rank: i }] });
+      }
+    }
+  }
+
+  // Only tracks shared by enough players
+  const candidates = [...trackMap.values()].filter((c) => c.playerRanks.length >= minShared);
+
+  // Round-robin by correct player for fairness
+  const byPlayer = new Map<string, TrackCandidate[]>();
+  for (const candidate of shuffle(candidates)) {
+    const sorted = [...candidate.playerRanks].sort((a, b) =>
+      a.rank !== b.rank ? a.rank - b.rank : a.playerId.localeCompare(b.playerId),
+    );
+    const correctPlayerId = sorted[0].playerId;
+    const bucket = byPlayer.get(correctPlayerId) ?? [];
+    bucket.push(candidate);
+    byPlayer.set(correctPlayerId, bucket);
+  }
+
+  const selected: TrackCandidate[] = [];
+  const buckets = [...byPlayer.values()];
+  let bucketIndex = 0;
+  while (selected.length < budget) {
+    let added = false;
+    for (const bucket of buckets) {
+      if (bucketIndex < bucket.length && selected.length < budget) {
+        selected.push(bucket[bucketIndex]);
+        added = true;
+      }
+    }
+    if (!added) break;
+    bucketIndex++;
+  }
+
+  const entries: QuestionEntry[] = [];
+  for (const { track, playerRanks } of selected) {
+    const sorted = [...playerRanks].sort((a, b) =>
+      a.rank !== b.rank ? a.rank - b.rank : a.playerId.localeCompare(b.playerId),
+    );
+    const correctPlayerId = sorted[0].playerId;
+    const { options, correctFor } = buildOptions(players);
+    const correctSymbol = correctFor(correctPlayerId);
+    if (!correctSymbol) continue;
+    entries.push({
+      round: {
+        roundNumber: 0,
+        question: {
+          type: "WHO_LISTENS_MOST_TRACK",
+          trackId: track.id,
+          trackName: track.name,
+          albumArtUrl: track.albumArtUrl,
+        },
+        options,
+      },
+      correctSymbol,
+    });
+  }
+  return entries;
+}
+
 export async function generateQuestions(
   players: Player[],
   playerDataMap: Map<string, SpotifyPlayerData>,
@@ -100,7 +185,8 @@ export async function generateQuestions(
     }
   }
 
-  const artistLimit = Math.min(players.length * 3, MAX_ROUNDS - tasteEntries.length);
+  const remainingAfterTaste = MAX_ROUNDS - tasteEntries.length;
+  const artistLimit = Math.min(players.length * 3, Math.floor(remainingAfterTaste / 2));
 
   // Pre-compute correct player for each candidate, then group by player and
   // round-robin pick so each player is the correct answer roughly equally often.
@@ -161,8 +247,12 @@ export async function generateQuestions(
     });
   }
 
+  // --- WHO_LISTENS_MOST_TRACK pool ---
+  const trackBudget = MAX_ROUNDS - tasteEntries.length - artistEntries.length;
+  const trackEntries = generateWhoListensMostTrackEntries(players, playerDataMap, trackBudget);
+
   // Combine, shuffle, and assign final round numbers
-  const all = shuffle([...tasteEntries, ...artistEntries]);
+  const all = shuffle([...tasteEntries, ...artistEntries, ...trackEntries]);
   for (let i = 0; i < all.length; i++) {
     all[i].round.roundNumber = i + 1;
   }

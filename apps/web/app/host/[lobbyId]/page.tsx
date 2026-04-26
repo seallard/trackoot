@@ -96,9 +96,13 @@ export default function HostLobbyPage() {
   useEffect(() => {
     fetch(`${SERVER_URL}/lobbies/${lobbyId}`)
       .then((r) => r.json())
-      .then(({ players }: { players: { playerId: string; displayName: string; isGuest: boolean }[] }) => {
-        for (const player of players) addPlayer(player);
-      })
+      .then(
+        ({
+          players,
+        }: { players: { playerId: string; displayName: string; isGuest: boolean }[] }) => {
+          for (const player of players) addPlayer(player);
+        },
+      )
       .catch(console.error);
   }, [lobbyId, addPlayer]);
 
@@ -148,7 +152,9 @@ export default function HostLobbyPage() {
 
     socket.on("lobby:player_joined", ({ player }) => addPlayer(player));
     socket.on("lobby:reset", () => resetGame());
-    socket.on("game:round_start", ({ round, endsAt, playerCount }) => startRound(round, endsAt, playerCount));
+    socket.on("game:round_start", ({ round, endsAt, playerCount }) =>
+      startRound(round, endsAt, playerCount),
+    );
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
     socket.on("game:round_answer_status", ({ answeredCount, totalPlayers }) =>
@@ -258,14 +264,17 @@ export default function HostLobbyPage() {
             const meta = SYMBOL_META[correctSymbol];
             const correctLabel = round?.options.find((o) => o.symbol === correctSymbol)?.label;
             return (
-              <div className={cn(meta.bg, "flex flex-col items-center gap-2 rounded-2xl px-8 py-5 text-center")}>
+              <div
+                className={cn(
+                  meta.bg,
+                  "flex flex-col items-center gap-2 rounded-2xl px-8 py-5 text-center",
+                )}
+              >
                 <div className="flex items-center gap-4">
                   <span className="text-4xl">{meta.label}</span>
                   <span className="text-2xl font-black">Correct answer!</span>
                 </div>
-                {correctLabel && (
-                  <span className="text-3xl font-black">{correctLabel}</span>
-                )}
+                {correctLabel && <span className="text-3xl font-black">{correctLabel}</span>}
               </div>
             );
           })()}
@@ -319,6 +328,20 @@ export default function HostLobbyPage() {
                 )}
                 <h2 className="text-4xl font-black leading-tight">
                   Who listens the most to {round.question.artistName}?
+                </h2>
+              </>
+            )}
+            {round.question.type === "WHO_LISTENS_MOST_TRACK" && (
+              <>
+                {round.question.albumArtUrl && (
+                  <img
+                    src={round.question.albumArtUrl}
+                    alt={round.question.trackName}
+                    className="h-32 w-32 rounded-xl object-cover shadow-2xl"
+                  />
+                )}
+                <h2 className="text-4xl font-black leading-tight">
+                  Who listens the most to {round.question.trackName}?
                 </h2>
               </>
             )}
