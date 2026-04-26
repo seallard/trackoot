@@ -31,7 +31,6 @@ export default function JoinPage() {
       saveSession({ userId: urlUserId, displayName: urlDisplayName, role: "player" });
       setAuth(urlUserId, urlDisplayName, "player");
       setResolvedUserId(urlUserId);
-      setName(urlDisplayName);
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
@@ -41,7 +40,6 @@ export default function JoinPage() {
     if (stored?.role === "player") {
       setAuth(stored.userId, stored.displayName, "player");
       setResolvedUserId(stored.userId);
-      setName(stored.displayName);
       return;
     }
 
