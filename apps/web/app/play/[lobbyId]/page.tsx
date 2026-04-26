@@ -111,6 +111,7 @@ export default function PlayPage() {
         <RoundResultsScreen
           scores={scores}
           correctSymbol={correctSymbol}
+          correctLabel={round?.options.find((o) => o.symbol === correctSymbol)?.label ?? null}
           submittedSymbol={submittedSymbol}
           playerId={playerId}
         />
@@ -207,11 +208,13 @@ function GameOverMyResult({
 function RoundResultsScreen({
   scores,
   correctSymbol,
+  correctLabel,
   submittedSymbol,
   playerId,
 }: {
   scores: PlayerScore[];
   correctSymbol: AnswerSymbol;
+  correctLabel: string | null;
   submittedSymbol: AnswerSymbol | null;
   playerId: string | null;
 }) {
@@ -239,6 +242,9 @@ function RoundResultsScreen({
       >
         <p className="text-6xl">{isCorrect ? "✓" : "✗"}</p>
         <p className="text-3xl font-black">{isCorrect ? "Correct!" : "Wrong"}</p>
+        {correctLabel && (
+          <p className="text-xl font-semibold text-white/80">{correctLabel}</p>
+        )}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}

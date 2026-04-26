@@ -256,10 +256,16 @@ export default function HostLobbyPage() {
         >
           {(() => {
             const meta = SYMBOL_META[correctSymbol];
+            const correctLabel = round?.options.find((o) => o.symbol === correctSymbol)?.label;
             return (
-              <div className={cn(meta.bg, "flex items-center gap-4 rounded-2xl px-8 py-5")}>
-                <span className="text-4xl">{meta.label}</span>
-                <span className="text-2xl font-black">Correct answer!</span>
+              <div className={cn(meta.bg, "flex flex-col items-center gap-2 rounded-2xl px-8 py-5 text-center")}>
+                <div className="flex items-center gap-4">
+                  <span className="text-4xl">{meta.label}</span>
+                  <span className="text-2xl font-black">Correct answer!</span>
+                </div>
+                {correctLabel && (
+                  <span className="text-3xl font-black">{correctLabel}</span>
+                )}
               </div>
             );
           })()}
