@@ -1,4 +1,4 @@
-import { ANSWER_SYMBOLS } from "@trackoot/types";
+import { ANSWER_SYMBOLS, QUESTION_TYPES } from "@trackoot/types";
 import type {
   AnswerOption,
   AnswerSymbol,
@@ -73,7 +73,7 @@ function generateWhoseTasteEntries(
     if (!correctSymbol) continue;
 
     entries.push({
-      round: { roundNumber: 0, question: { type: "WHOSE_TASTE", trackIds }, options },
+      round: { roundNumber: 0, question: { type: QUESTION_TYPES.WHOSE_TASTE, trackIds }, options },
       correctSymbol,
     });
   }
@@ -147,7 +147,7 @@ function generateWhoListensMostTrackEntries(
       round: {
         roundNumber: 0,
         question: {
-          type: "WHO_LISTENS_MOST_TRACK",
+          type: QUESTION_TYPES.WHO_LISTENS_MOST_TRACK,
           trackId: track.id,
           trackName: track.name,
           albumArtUrl: track.albumArtUrl,
@@ -235,7 +235,7 @@ export async function generateQuestions(
       round: {
         roundNumber: 0,
         question: {
-          type: "WHO_LISTENS_MOST_ARTIST",
+          type: QUESTION_TYPES.WHO_LISTENS_MOST_ARTIST,
           artistId: artist.id,
           artistName: artist.name,
           artistImageUrl: artist.imageUrl,

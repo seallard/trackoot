@@ -50,27 +50,34 @@ export interface PlayerScore {
 
 // ---- Questions (discriminated union) ----
 
+export const QUESTION_TYPES = {
+  WHO_LISTENS_MOST_ARTIST: "WHO_LISTENS_MOST_ARTIST",
+  WHO_LISTENS_MOST_TRACK: "WHO_LISTENS_MOST_TRACK",
+  WHO_LISTENS_MOST_GENRE: "WHO_LISTENS_MOST_GENRE",
+  WHOSE_TASTE: "WHOSE_TASTE",
+} as const;
+
 export type Question =
   | {
-      type: "WHO_LISTENS_MOST_ARTIST";
+      type: typeof QUESTION_TYPES.WHO_LISTENS_MOST_ARTIST;
       artistId: string;
       artistName: string;
       artistImageUrl?: string;
       trackId: string; // track to play during round
     }
   | {
-      type: "WHO_LISTENS_MOST_GENRE";
+      type: typeof QUESTION_TYPES.WHO_LISTENS_MOST_GENRE;
       genre: string;
       trackId: string; // representative track to play
     }
   | {
-      type: "WHO_LISTENS_MOST_TRACK";
+      type: typeof QUESTION_TYPES.WHO_LISTENS_MOST_TRACK;
       trackId: string;
       trackName: string;
       albumArtUrl?: string;
     }
   | {
-      type: "WHOSE_TASTE";
+      type: typeof QUESTION_TYPES.WHOSE_TASTE;
       trackIds: string[]; // 3–5 track IDs played sequentially (~4s each)
     };
 

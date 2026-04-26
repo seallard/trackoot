@@ -1,11 +1,12 @@
-import type {
-  AnswerSymbol,
-  ClientToServerEvents,
-  Player,
-  PlayerScore,
-  Round,
-  ServerToClientEvents,
-  SpotifyPlayerData,
+import {
+  type AnswerSymbol,
+  type ClientToServerEvents,
+  type Player,
+  type PlayerScore,
+  QUESTION_TYPES,
+  type Round,
+  type ServerToClientEvents,
+  type SpotifyPlayerData,
 } from "@trackoot/types";
 import type { Server } from "socket.io";
 import { getLobby, getPlayers, recordScore } from "./lobby";
@@ -70,7 +71,7 @@ function beginRound(
 
   const question = entry.round.question;
 
-  if (question.type === "WHO_LISTENS_MOST_ARTIST") {
+  if (question.type === QUESTION_TYPES.WHO_LISTENS_MOST_ARTIST) {
     getLobby(lobbyId)
       .then(async (lobby) => {
         if (!lobby?.deviceId || !lobby.hostId) {
@@ -83,7 +84,7 @@ function beginRound(
         await playTrack(token, lobby.deviceId, question.trackId);
       })
       .catch((err) => console.error(`[${lobbyId}] Playback start failed:`, err));
-  } else if (question.type === "WHOSE_TASTE") {
+  } else if (question.type === QUESTION_TYPES.WHOSE_TASTE) {
     question.trackIds.forEach((trackId, i) => {
       const t = setTimeout(() => {
         getLobby(lobbyId)

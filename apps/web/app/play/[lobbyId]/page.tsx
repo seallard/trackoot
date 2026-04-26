@@ -5,7 +5,7 @@ import { getSocket } from "@/lib/socket";
 import { useLobbyStore } from "@/lib/store";
 import { SYMBOL_META } from "@/lib/symbols";
 import { useCountUp } from "@/lib/useCountUp";
-import { ANSWER_SYMBOLS } from "@trackoot/types";
+import { ANSWER_SYMBOLS, QUESTION_TYPES } from "@trackoot/types";
 import type { AnswerSymbol } from "@trackoot/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { useParams } from "next/navigation";
@@ -51,7 +51,9 @@ export default function PlayPage() {
     socket.on("connect", joinRoom);
 
     socket.on("lobby:reset", () => resetGame());
-    socket.on("game:round_start", ({ round, endsAt, playerCount }) => startRound(round, endsAt, playerCount));
+    socket.on("game:round_start", ({ round, endsAt, playerCount }) =>
+      startRound(round, endsAt, playerCount),
+    );
     socket.on("game:round_end", ({ correctSymbol, scores }) => endRound(correctSymbol, scores));
     socket.on("game:over", ({ finalStandings }) => endGame(finalStandings));
 
@@ -125,34 +127,43 @@ export default function PlayPage() {
           initial="initial"
           animate="animate"
           exit="exit"
-          className="grid h-full grid-cols-2 grid-rows-2"
+          className="flex h-full flex-col"
         >
-          {ANSWER_SYMBOLS.filter((s) => round.options.some((o) => o.symbol === s)).map(
-            (symbol, i) => {
-              const meta = SYMBOL_META[symbol];
-              const isSubmitted = submittedSymbol === symbol;
-              const isOther = !!submittedSymbol && !isSubmitted;
-              return (
-                <motion.button
-                  key={symbol}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 18, delay: i * 0.07 }}
-                  onClick={() => handleAnswer(symbol)}
-                  disabled={!!submittedSymbol}
-                  className={cn(
-                    meta.bg,
-                    "flex flex-col items-center justify-center gap-3 text-white transition",
-                    "active:brightness-75 disabled:cursor-default",
-                    isOther && "opacity-40",
-                    isSubmitted && "ring-4 ring-inset ring-white",
-                  )}
-                >
-                  <span className="text-5xl">{meta.label}</span>
-                </motion.button>
-              );
-            },
-          )}
+          <div className="px-5 py-3 text-center text-sm font-semibold text-white/80">
+            {round.question.type === QUESTION_TYPES.WHO_LISTENS_MOST_ARTIST &&
+              `Who listens the most to ${round.question.artistName}?`}
+            {round.question.type === QUESTION_TYPES.WHO_LISTENS_MOST_TRACK &&
+              `Who listens the most to ${round.question.trackName}?`}
+            {round.question.type === QUESTION_TYPES.WHOSE_TASTE && "Whose music taste is this?"}
+          </div>
+          <div className="grid flex-1 grid-cols-2 grid-rows-2">
+            {ANSWER_SYMBOLS.filter((s) => round.options.some((o) => o.symbol === s)).map(
+              (symbol, i) => {
+                const meta = SYMBOL_META[symbol];
+                const isSubmitted = submittedSymbol === symbol;
+                const isOther = !!submittedSymbol && !isSubmitted;
+                return (
+                  <motion.button
+                    key={symbol}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 18, delay: i * 0.07 }}
+                    onClick={() => handleAnswer(symbol)}
+                    disabled={!!submittedSymbol}
+                    className={cn(
+                      meta.bg,
+                      "flex flex-col items-center justify-center gap-3 text-white transition",
+                      "active:brightness-75 disabled:cursor-default",
+                      isOther && "opacity-40",
+                      isSubmitted && "ring-4 ring-inset ring-white",
+                    )}
+                  >
+                    <span className="text-5xl">{meta.label}</span>
+                  </motion.button>
+                );
+              },
+            )}
+          </div>
         </motion.main>
       )}
 
@@ -242,9 +253,7 @@ function RoundResultsScreen({
       >
         <p className="text-6xl">{isCorrect ? "✓" : "✗"}</p>
         <p className="text-3xl font-black">{isCorrect ? "Correct!" : "Wrong"}</p>
-        {correctLabel && (
-          <p className="text-xl font-semibold text-white/80">{correctLabel}</p>
-        )}
+        {correctLabel && <p className="text-xl font-semibold text-white/80">{correctLabel}</p>}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}

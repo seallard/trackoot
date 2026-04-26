@@ -5,6 +5,7 @@ import { getSocket } from "@/lib/socket";
 import { useLobbyStore } from "@/lib/store";
 import { SYMBOL_META } from "@/lib/symbols";
 import { useCountUp } from "@/lib/useCountUp";
+import { QUESTION_TYPES } from "@trackoot/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -317,7 +318,7 @@ export default function HostLobbyPage() {
 
           {/* Question */}
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center">
-            {round.question.type === "WHO_LISTENS_MOST_ARTIST" && (
+            {round.question.type === QUESTION_TYPES.WHO_LISTENS_MOST_ARTIST && (
               <>
                 {round.question.artistImageUrl && (
                   <img
@@ -331,7 +332,7 @@ export default function HostLobbyPage() {
                 </h2>
               </>
             )}
-            {round.question.type === "WHO_LISTENS_MOST_TRACK" && (
+            {round.question.type === QUESTION_TYPES.WHO_LISTENS_MOST_TRACK && (
               <>
                 {round.question.albumArtUrl && (
                   <img
@@ -345,7 +346,7 @@ export default function HostLobbyPage() {
                 </h2>
               </>
             )}
-            {round.question.type === "WHOSE_TASTE" &&
+            {round.question.type === QUESTION_TYPES.WHOSE_TASTE &&
               (() => {
                 const trackIds = round.question.trackIds;
                 const trackNumber = currentTrackId ? trackIds.indexOf(currentTrackId) + 1 : 0;
